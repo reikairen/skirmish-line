@@ -237,15 +237,15 @@ class GameEngine {
     const nodes = [];
     let winReason = '';
 
-    // Determine win reason
-    const counts = { 1: 0, 2: 0 };
+    // Determine win reason (use claimedBorders arrays as source of truth)
+    const counts = {
+      1: this.players[1].claimedBorders.length,
+      2: this.players[2].claimedBorders.length,
+    };
     let adj1 = 0, adj2 = 0, adj1Start = -1, adj2Start = -1;
     let winByAdj = null, adjStart = -1;
 
     for (const border of this.board.borders) {
-      if (border.claimed && border.winner) {
-        counts[border.winner]++;
-      }
       // Track adjacency
       if (border.claimed && border.winner === 1) {
         if (adj1 === 0) adj1Start = border.id;
@@ -264,11 +264,13 @@ class GameEngine {
     }
 
     if (winByAdj === this.winner) {
-      winReason = `Secured 3 adjacent nodes in a row (nodes ${adjStart + 1}-${adjStart + 3})`;
+      winReason = `Secured 3 adjacent nodes in a row (nodes ${adjStart + 1}\u2013${adjStart + 3})`;
     } else if (counts[this.winner] >= 5) {
       winReason = `Secured ${counts[this.winner]} of 9 nodes (5 required)`;
+    } else if (counts[this.winner] > counts[this.winner === 1 ? 2 : 1]) {
+      winReason = `Secured more nodes (${counts[this.winner]} vs ${counts[this.winner === 1 ? 2 : 1]})`;
     } else {
-      winReason = `Secured ${counts[this.winner]} nodes`;
+      winReason = `Session resolved by tiebreaker (${counts[1]} \u2013 ${counts[2]})`;
     }
 
     // Build per-node breakdown

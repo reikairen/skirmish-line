@@ -1,7 +1,7 @@
 // Matches COMBINATION_TYPES: CR(5) > 3oaK(4) > Color(3) > Run(2) > Sum(1)
 const FORMATION_NAMES = {
   0: '',
-  1: 'Sum',
+  1: 'Total',
   2: 'Sequence',
   3: 'Category',
   4: 'Triplet',

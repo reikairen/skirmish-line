@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 class RoomManager {
   constructor() {
     this.rooms = new Map();       // roomId -> room object
@@ -7,11 +9,13 @@ class RoomManager {
   _generateRoomId() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let id;
+    let attempts = 0;
     do {
       id = '';
       for (let i = 0; i < 4; i++) {
-        id += chars[Math.floor(Math.random() * chars.length)];
+        id += chars[crypto.randomInt(chars.length)];
       }
+      if (++attempts > 100) throw new Error('Room ID space exhausted');
     } while (this.rooms.has(id));
     return id;
   }

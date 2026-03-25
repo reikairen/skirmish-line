@@ -165,8 +165,7 @@ function handleAITurn(room) {
         // AI has no valid moves — force resolve
         game._resolveRemainingBorders();
         if (!game.gameOver) {
-          game.gameOver = true;
-          game.winner = game.board.checkWinner();
+          game._forceEndGame();
         }
         emitGameState(room);
         if (game.gameOver) emitGameOver(room);
@@ -235,6 +234,17 @@ io.on('connection', (socket) => {
       roomManager.destroyRoom(existingRoom.id);
     }
 
+    // For public mode, try to join an existing waiting room first
+    if (mode === 'public') {
+      const joinResult = roomManager.joinPublicRoom(socket.id, playerName);
+      if (joinResult && !joinResult.error) {
+        const joinedRoom = joinResult.room;
+        socket.join(joinedRoom.id);
+        startGame(joinedRoom.id);
+        return;
+      }
+    }
+
     const roomId = roomManager.createRoom(socket.id, playerName, mode, { aiDifficulty: difficulty });
     socket.join(roomId);
 
@@ -284,6 +294,12 @@ io.on('connection', (socket) => {
     const room = roomManager.getRoomBySocket(socket.id);
     if (room) {
       if (room.aiTimeout) clearTimeout(room.aiTimeout);
+      // Notify other players before destroying
+      for (const player of room.players) {
+        if (player.socketId !== socket.id) {
+          io.to(player.socketId).emit('opponent-disconnected');
+        }
+      }
       socket.leave(room.id);
       roomManager.destroyRoom(room.id);
     }
