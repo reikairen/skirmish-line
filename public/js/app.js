@@ -10,7 +10,6 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 
-  // Manage polling lifecycle
   if (id === 'menu-screen') {
     startPolling();
   } else {
@@ -27,7 +26,7 @@ function hideOverlay(id) {
 }
 
 function getUserName() {
-  return document.getElementById('user-name').value.trim() || 'Analyst';
+  return document.getElementById('user-name').value.trim() || 'Player';
 }
 
 // --- Menu handlers ---
@@ -57,7 +56,6 @@ document.getElementById('btn-join').addEventListener('click', () => {
 document.getElementById('btn-back-menu').addEventListener('click', () => {
   socket.emit('leave-room');
   showScreen('menu-screen');
-  socket.emit('get-public-games');
 });
 
 document.getElementById('btn-new-session').addEventListener('click', () => {
@@ -65,7 +63,6 @@ document.getElementById('btn-new-session').addEventListener('click', () => {
   showScreen('menu-screen');
   sessionState = null;
   selectedTileIndex = null;
-  socket.emit('get-public-games');
 });
 
 document.getElementById('btn-disconnect-menu').addEventListener('click', () => {
@@ -73,19 +70,33 @@ document.getElementById('btn-disconnect-menu').addEventListener('click', () => {
   showScreen('menu-screen');
   sessionState = null;
   selectedTileIndex = null;
-  socket.emit('get-public-games');
 });
 
 document.getElementById('session-code-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('btn-join').click();
 });
 
-// Guide overlay
+// Guide
 document.getElementById('btn-open-guide').addEventListener('click', () => {
   showOverlay('guide-overlay');
 });
 document.getElementById('btn-close-guide').addEventListener('click', () => {
   hideOverlay('guide-overlay');
+});
+
+// Forfeit
+document.getElementById('btn-forfeit').addEventListener('click', () => {
+  showOverlay('forfeit-overlay');
+});
+document.getElementById('btn-forfeit-cancel').addEventListener('click', () => {
+  hideOverlay('forfeit-overlay');
+});
+document.getElementById('btn-forfeit-confirm').addEventListener('click', () => {
+  hideOverlay('forfeit-overlay');
+  socket.emit('leave-room');
+  showScreen('menu-screen');
+  sessionState = null;
+  selectedTileIndex = null;
 });
 
 // --- Socket events ---
@@ -106,7 +117,7 @@ socket.on('game-start', ({ playerNames: names, playerId }) => {
   const peerId = playerId === 1 ? 2 : 1;
   userNames = {
     [playerId]: names[playerId - 1] || 'You',
-    [peerId]: names[peerId - 1] || 'Peer',
+    [peerId]: names[peerId - 1] || 'Opponent',
   };
   selectedTileIndex = null;
   showScreen('session-screen');
@@ -117,33 +128,34 @@ socket.on('game-state', (state) => {
   renderSession();
 });
 
-socket.on('game-over', ({ winner, winnerName, summary, playerId }) => {
-  const successful = winner === myUserId;
-  document.getElementById('result-title').textContent = successful ? 'Successful' : 'Unsuccessful';
-  document.getElementById('result-message').textContent =
-    successful ? 'You have secured the required nodes.' : `${winnerName} secured the required nodes.`;
+socket.on('game-over', ({ winner, winnerName, summary }) => {
+  const isVictory = winner === myUserId;
 
-  // Render summary
+  const title = document.getElementById('result-title');
+  title.textContent = isVictory ? 'Victory' : 'Defeat';
+  title.className = isVictory ? 'victory-title' : 'defeat-title';
+
+  document.getElementById('result-message').textContent =
+    isVictory ? 'You secured the required nodes.' : `${winnerName} secured the required nodes.`;
+
   if (summary) {
     const pid = myUserId;
     const peerId = pid === 1 ? 2 : 1;
     const youName = userNames[pid] || 'You';
-    const peerName = userNames[peerId] || 'Peer';
+    const peerName = userNames[peerId] || 'Opponent';
 
     document.getElementById('result-reason').textContent = summary.winReason;
 
     let html = '';
 
-    // Score boxes
     html += '<div class="summary-scores">';
     html += `<div class="summary-score-box"><div class="score-num score-you">${summary.scores[pid]}</div><div class="score-label">${escapeHtml(youName)}</div></div>`;
-    html += `<div class="summary-score-box"><div class="score-num" style="color:#888;">vs</div><div class="score-label">&nbsp;</div></div>`;
+    html += `<div class="summary-score-box"><div class="score-num" style="color:#555;">&ndash;</div><div class="score-label">&nbsp;</div></div>`;
     html += `<div class="summary-score-box"><div class="score-num score-peer">${summary.scores[peerId]}</div><div class="score-label">${escapeHtml(peerName)}</div></div>`;
     html += '</div>';
 
-    // Node-by-node table
     html += '<table class="summary-table">';
-    html += `<tr><th>Node</th><th>${escapeHtml(youName)}</th><th>${escapeHtml(peerName)}</th><th>Result</th></tr>`;
+    html += `<tr><th>Node</th><th>${escapeHtml(youName)}</th><th>${escapeHtml(peerName)}</th><th>Won By</th></tr>`;
 
     for (const node of summary.nodes) {
       const youType = pid === 1 ? node.p1Type : node.p2Type;
@@ -162,12 +174,12 @@ socket.on('game-over', ({ winner, winnerName, summary, playerId }) => {
         resultText = 'Tie';
         resultClass = 'node-tie';
       } else {
-        resultText = 'Open';
+        resultText = 'Unresolved';
         resultClass = 'node-open';
       }
 
-      const youCell = youType ? `${youType} (${youSum})` : '---';
-      const peerCell = peerType ? `${peerType} (${peerSum})` : '---';
+      const youCell = youType ? `${youType} (${youSum})` : '&mdash;';
+      const peerCell = peerType ? `${peerType} (${peerSum})` : '&mdash;';
 
       html += `<tr>`;
       html += `<td>${node.id + 1}</td>`;
@@ -198,17 +210,17 @@ socket.on('public-games', (sessions) => {
   container.innerHTML = '';
 
   if (sessions.length === 0) {
-    container.innerHTML = '<div class="no-sessions">No open sessions available</div>';
+    container.innerHTML = '<div class="no-sessions">No open sessions right now</div>';
     return;
   }
 
   sessions.forEach(session => {
     const item = document.createElement('div');
     item.className = 'open-session-item';
-    item.innerHTML = `<span class="host-name">${escapeHtml(session.hostName)} is waiting...</span>`;
+    item.innerHTML = `<span class="host-name">${escapeHtml(session.hostName)} is waiting</span>`;
     const joinBtn = document.createElement('button');
     joinBtn.className = 'btn btn-primary';
-    joinBtn.textContent = 'Connect';
+    joinBtn.textContent = 'Join';
     joinBtn.addEventListener('click', () => {
       socket.emit('join-room', { roomId: session.roomId, playerName: getUserName() });
     });
@@ -248,15 +260,17 @@ function renderSession() {
   if (!sessionState) return;
 
   const state = sessionState;
-  const isMyCycle = state.currentPlayer === state.playerId;
+  const isMyTurn = state.currentPlayer === state.playerId;
   const inAssignPhase = state.turnPhase === 'play';
-  const inSecurePhase = state.turnPhase === 'claim';
+  const inEndPhase = state.turnPhase === 'claim';
 
   Renderer.renderHeader(state, userNames);
+  Renderer.updateInstruction(state, selectedTileIndex);
   Renderer.renderPeerTray(state.opponentCardCount);
 
+  // Determine clickable nodes
   let clickableNodes = [];
-  if (isMyCycle && inAssignPhase && selectedTileIndex !== null) {
+  if (isMyTurn && inAssignPhase && selectedTileIndex !== null) {
     clickableNodes = state.borders
       .filter(b => {
         if (b.claimed) return false;
@@ -268,16 +282,23 @@ function renderSession() {
 
   Renderer.renderWorkspace(state.borders, state.playerId, onNodeClick, clickableNodes);
 
-  if (isMyCycle && inAssignPhase) {
-    Renderer.renderYourTray(state.hand, selectedTileIndex, onTileSelect);
-  } else {
-    Renderer.renderYourTray(state.hand, null, () => {});
-  }
+  // Render hand (dimmed when not your turn)
+  const dimmed = !isMyTurn || !inAssignPhase;
+  Renderer.renderYourTray(
+    state.hand,
+    dimmed ? null : selectedTileIndex,
+    dimmed ? () => {} : onTileSelect,
+    dimmed
+  );
 
-  Renderer.showEndCycleButton(
-    isMyCycle && inSecurePhase && !state.gameOver,
+  // Show end turn button during claim phase
+  Renderer.showEndTurnButton(
+    isMyTurn && inEndPhase && !state.gameOver,
     () => socket.emit('end-turn')
   );
+
+  // Show forfeit button during active session
+  Renderer.showForfeitButton(!state.gameOver);
 }
 
 function onTileSelect(index) {

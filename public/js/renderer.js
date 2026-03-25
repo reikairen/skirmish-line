@@ -1,7 +1,7 @@
 // Matches COMBINATION_TYPES: CR(5) > 3oaK(4) > Color(3) > Run(2) > Sum(1)
 const FORMATION_NAMES = {
   0: '',
-  1: 'Total',
+  1: 'Sum',
   2: 'Sequence',
   3: 'Category',
   4: 'Triplet',
@@ -17,11 +17,11 @@ function getFormationType(tiles) {
   const isSeq = sorted.every((c, i) => i === 0 || c.value === sorted[i - 1].value + 1);
   const isTrip = tiles.every(c => c.value === tiles[0].value);
 
-  if (isCat && isSeq) return 5; // Category Sequence
-  if (isTrip) return 4;         // Triplet
-  if (isCat) return 3;          // Category Set
-  if (isSeq) return 2;          // Sequence
-  return 1;                     // Total (sum)
+  if (isCat && isSeq) return 5;
+  if (isTrip) return 4;
+  if (isCat) return 3;
+  if (isSeq) return 2;
+  return 1;
 }
 
 function createTileElement(tile, options = {}) {
@@ -36,9 +36,9 @@ function createTileElement(tile, options = {}) {
   return div;
 }
 
-function createHiddenTile(small) {
+function createHiddenTile() {
   const div = document.createElement('div');
-  div.className = 'tile tile-hidden' + (small ? ' tile-sm' : '');
+  div.className = 'tile tile-hidden';
   return div;
 }
 
@@ -47,18 +47,19 @@ const Renderer = {
     const container = document.getElementById('peer-tray');
     container.innerHTML = '';
     for (let i = 0; i < count; i++) {
-      container.appendChild(createHiddenTile(false));
+      container.appendChild(createHiddenTile());
     }
   },
 
-  renderYourTray(tiles, selectedIndex, onSelect) {
+  renderYourTray(tiles, selectedIndex, onSelect, dimmed) {
     const container = document.getElementById('your-tray');
     container.innerHTML = '';
+    container.classList.toggle('dimmed', !!dimmed);
     tiles.forEach((tile, i) => {
       const el = createTileElement(tile, {
-        clickable: true,
+        clickable: !dimmed,
         selected: i === selectedIndex,
-        onClick: () => onSelect(i),
+        onClick: dimmed ? null : () => onSelect(i),
       });
       container.appendChild(el);
     });
@@ -72,7 +73,7 @@ const Renderer = {
       const col = document.createElement('div');
       col.className = 'node-column';
 
-      // Peer tiles (top - grow toward marker)
+      // Peer tiles (top — grow toward marker)
       const peerTiles = document.createElement('div');
       peerTiles.className = 'node-tiles';
       const peerList = userId === 1 ? node.player2Cards : node.player1Cards;
@@ -98,12 +99,12 @@ const Renderer = {
       if (node.claimed) {
         const securedByYou = node.winner === userId;
         marker.classList.add(securedByYou ? 'secured-1' : 'secured-2');
-        marker.textContent = securedByYou ? '\u2713' : '\u2717'; // checkmark / X
-        ownerLabel.textContent = securedByYou ? 'YOU' : 'PEER';
+        marker.textContent = securedByYou ? '\u2713' : '\u2717';
+        ownerLabel.textContent = securedByYou ? 'YOU' : 'THEM';
         ownerLabel.classList.add(securedByYou ? 'owner-you' : 'owner-peer');
       } else {
         marker.textContent = i + 1;
-        ownerLabel.textContent = '\u00A0'; // non-breaking space to preserve layout
+        ownerLabel.textContent = '\u00A0';
         if (clickableNodes && clickableNodes.includes(i)) {
           marker.classList.add('clickable');
           marker.addEventListener('click', () => onNodeClick(i));
@@ -113,7 +114,7 @@ const Renderer = {
       markerWrap.appendChild(ownerLabel);
       col.appendChild(markerWrap);
 
-      // Your tiles (bottom - grow away from marker)
+      // Your tiles (bottom — grow away from marker)
       const yourTiles = document.createElement('div');
       yourTiles.className = 'node-tiles bottom';
       const yourList = userId === 1 ? node.player1Cards : node.player2Cards;
@@ -133,24 +134,67 @@ const Renderer = {
   renderHeader(state, userNames) {
     const peerId = state.playerId === 1 ? 2 : 1;
 
-    document.getElementById('peer-name').textContent = userNames[peerId] || 'Peer';
+    document.getElementById('peer-name').textContent = userNames[peerId] || 'Opponent';
     document.getElementById('your-name').textContent = userNames[state.playerId] || 'You';
 
     document.getElementById('peer-points').textContent = state.scores[peerId];
     document.getElementById('your-points').textContent = state.scores[state.playerId];
 
-    const isYourCycle = state.currentPlayer === state.playerId;
-    document.getElementById('cycle-indicator').textContent =
-      state.gameOver ? 'Complete' :
-      isYourCycle ? 'Your Cycle' : "Peer's Cycle";
+    const isYourTurn = state.currentPlayer === state.playerId;
+    const indicator = document.getElementById('cycle-indicator');
+    if (state.gameOver) {
+      indicator.textContent = 'Complete';
+    } else if (isYourTurn) {
+      indicator.textContent = 'Your Turn';
+      indicator.style.color = '#43a047';
+    } else {
+      indicator.textContent = 'Waiting...';
+      indicator.style.color = '#e94560';
+    }
 
-    document.getElementById('pool-count').textContent = `Pool: ${state.deckRemaining}`;
+    document.getElementById('pool-count').textContent =
+      state.deckRemaining > 0 ? `${state.deckRemaining} tiles left` : 'Pool empty';
   },
 
-  showEndCycleButton(show, onClick) {
+  updateInstruction(state, selectedTileIndex) {
+    const bar = document.getElementById('instruction-bar');
+    const isMyTurn = state.currentPlayer === state.playerId;
+
+    if (state.gameOver) {
+      bar.textContent = '';
+      bar.style.display = 'none';
+      return;
+    }
+
+    bar.style.display = 'flex';
+
+    if (!isMyTurn) {
+      bar.textContent = 'Waiting for your opponent to make a move...';
+      bar.className = 'instruction-bar waiting';
+      return;
+    }
+
+    bar.className = 'instruction-bar';
+
+    if (state.turnPhase === 'play') {
+      if (selectedTileIndex === null) {
+        bar.textContent = 'Select a tile from your hand below';
+      } else {
+        bar.textContent = 'Now tap a glowing node to place your tile';
+      }
+    } else if (state.turnPhase === 'claim') {
+      bar.textContent = 'Press "Done — End Turn" to finish your turn';
+    }
+  },
+
+  showEndTurnButton(show, onClick) {
     const btn = document.getElementById('btn-end-cycle');
     btn.style.display = show ? 'inline-block' : 'none';
     btn.onclick = onClick || null;
+  },
+
+  showForfeitButton(show) {
+    document.getElementById('btn-forfeit').style.display = show ? 'inline-block' : 'none';
   },
 
   showToast(message) {
