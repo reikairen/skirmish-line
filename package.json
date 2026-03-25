@@ -1,7 +1,7 @@
 {
-  "name": "schotten-totten-web",
+  "name": "skirmish-line",
   "version": "1.0.0",
-  "description": "Schotten-Totten card game with online multiplayer",
+  "description": "Strategic resource allocation tool with real-time collaboration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "express": "^4.18.2",
+    "helmet": "^8.1.0",
     "socket.io": "^4.7.4"
   }
 }

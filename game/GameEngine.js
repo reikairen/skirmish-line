@@ -105,19 +105,33 @@ class GameEngine {
     this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
     this.turnPhase = TURN_PHASES.PLAY_CARD;
 
-    // Check if game should end (both hands empty and deck empty)
-    if (this.deck.isEmpty() &&
-        this.players[1].hand.length === 0 &&
-        this.players[2].hand.length === 0) {
-      this._resolveRemainingBorders();
-    }
+    // Check if game should end
+    if (!this.gameOver) {
+      const p1Empty = this.players[1].hand.length === 0;
+      const p2Empty = this.players[2].hand.length === 0;
+      const deckEmpty = this.deck.isEmpty();
+      const noMoves = !this._hasValidMove(this.currentPlayer);
 
-    // Stalemate: if current player has tiles but no valid border to place on
-    if (!this.gameOver && this.players[this.currentPlayer].hand.length > 0) {
-      if (!this._hasValidMove(this.currentPlayer)) {
+      if ((deckEmpty && p1Empty && p2Empty) || noMoves) {
         this._resolveRemainingBorders();
+
+        // If still no winner after resolving, force end by border count (M2/M3)
+        if (!this.gameOver) {
+          this._forceEndGame();
+        }
       }
     }
+  }
+
+  /**
+   * Force end the game when no further progress is possible.
+   * Winner is determined by most claimed borders; ties go to player 1 (first mover).
+   */
+  _forceEndGame() {
+    const p1Count = this.players[1].claimedBorders.length;
+    const p2Count = this.players[2].claimedBorders.length;
+    this.gameOver = true;
+    this.winner = p2Count > p1Count ? 2 : 1;
   }
 
   /**

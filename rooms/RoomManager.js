@@ -24,6 +24,8 @@ class RoomManager {
       players: [{ socketId, name: playerName, playerId: 1 }],
       game: null,
       aiDifficulty: options.aiDifficulty || 'medium',
+      createdAt: Date.now(),
+      aiTimeout: null,
     };
     this.rooms.set(roomId, room);
     this.socketToRoom.set(socketId, roomId);
