@@ -100,10 +100,12 @@
 
   <!-- RESULT OVERLAY -->
   <div id="result-overlay" class="overlay">
-    <div class="overlay-content">
+    <div class="overlay-content" style="max-width: 600px;">
       <h1 id="result-title">Session Complete</h1>
       <p id="result-message"></p>
-      <button id="btn-new-session" class="btn btn-primary">New Session</button>
+      <p id="result-reason" style="color:#e94560; font-weight:600; margin-bottom:16px;"></p>
+      <div id="result-breakdown" class="guide-body" style="max-height:45vh;"></div>
+      <button id="btn-new-session" class="btn btn-primary" style="margin-top:16px;">New Session</button>
     </div>
   </div>
 
@@ -137,9 +139,9 @@
         <table class="rank-table">
           <tr><th>Rank</th><th>Formation</th><th>Description</th></tr>
           <tr><td>5</td><td>Category Sequence</td><td>Same category + consecutive values</td></tr>
-          <tr><td>4</td><td>Sequence</td><td>3 consecutive values, any category</td></tr>
+          <tr><td>4</td><td>Triplet</td><td>3 tiles with the same value</td></tr>
           <tr><td>3</td><td>Category Set</td><td>Same category, any values</td></tr>
-          <tr><td>2</td><td>Triplet</td><td>3 tiles with the same value</td></tr>
+          <tr><td>2</td><td>Sequence</td><td>3 consecutive values, any category</td></tr>
           <tr><td>1</td><td>Total</td><td>Sum of tile values (tiebreaker)</td></tr>
         </table>
 

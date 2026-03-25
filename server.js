@@ -85,10 +85,13 @@ function handleAITurn(room) {
 
 function emitGameOver(room) {
   const winnerName = getWinnerName(room);
+  const summary = room.game.getSummary();
   for (const player of room.players) {
     io.to(player.socketId).emit('game-over', {
       winner: room.game.winner,
       winnerName,
+      summary,
+      playerId: player.playerId,
     });
   }
 }

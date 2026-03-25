@@ -389,6 +389,15 @@ select:focus { border-color: #e94560; }
   border-color: #e53935;
 }
 
+.owner-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  height: 12px;
+}
+.owner-you { color: #42a5f5; }
+.owner-peer { color: #ef5350; }
+
 @keyframes pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
   50% { box-shadow: 0 0 0 8px rgba(233, 69, 96, 0); }
@@ -501,6 +510,57 @@ select:focus { border-color: #e94560; }
 .guide-body .rank-table th {
   color: #e94560;
 }
+
+/* Summary breakdown */
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.summary-table th,
+.summary-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #333;
+  text-align: center;
+}
+
+.summary-table th {
+  color: #e94560;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.summary-table .node-you { color: #42a5f5; }
+.summary-table .node-peer { color: #ef5350; }
+.summary-table .node-tie { color: #888; }
+.summary-table .node-open { color: #555; }
+.summary-table .node-winner-cell { font-weight: 700; }
+
+.summary-scores {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin: 12px 0;
+}
+
+.summary-score-box {
+  text-align: center;
+}
+
+.summary-score-box .score-num {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.summary-score-box .score-label {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.score-you { color: #42a5f5; }
+.score-peer { color: #ef5350; }
 
 /* Toast notifications */
 .toast {

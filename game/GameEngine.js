@@ -195,6 +195,105 @@ class GameEngine {
       winner: this.winner,
     };
   }
+
+  /**
+   * Generate a detailed end-of-session summary.
+   */
+  getSummary() {
+    const { COMBINATION_NAMES } = require('./constants');
+    const { Combination, compareCombinations } = require('./Combination');
+
+    const nodes = [];
+    let winReason = '';
+
+    // Determine win reason
+    const counts = { 1: 0, 2: 0 };
+    let adj1 = 0, adj2 = 0, adj1Start = -1, adj2Start = -1;
+    let winByAdj = null, adjStart = -1;
+
+    for (const border of this.board.borders) {
+      if (border.claimed && border.winner) {
+        counts[border.winner]++;
+      }
+      // Track adjacency
+      if (border.claimed && border.winner === 1) {
+        if (adj1 === 0) adj1Start = border.id;
+        adj1++;
+        adj2 = 0;
+      } else if (border.claimed && border.winner === 2) {
+        if (adj2 === 0) adj2Start = border.id;
+        adj2++;
+        adj1 = 0;
+      } else {
+        adj1 = 0;
+        adj2 = 0;
+      }
+      if (adj1 >= 3 && !winByAdj) { winByAdj = 1; adjStart = adj1Start; }
+      if (adj2 >= 3 && !winByAdj) { winByAdj = 2; adjStart = adj2Start; }
+    }
+
+    if (winByAdj === this.winner) {
+      winReason = `Secured 3 adjacent nodes in a row (nodes ${adjStart + 1}-${adjStart + 3})`;
+    } else if (counts[this.winner] >= 5) {
+      winReason = `Secured ${counts[this.winner]} of 9 nodes (5 required)`;
+    } else {
+      winReason = `Secured ${counts[this.winner]} nodes`;
+    }
+
+    // Build per-node breakdown
+    for (const border of this.board.borders) {
+      const p1Cards = border.combinations[1].cards;
+      const p2Cards = border.combinations[2].cards;
+      const p1Full = border.combinations[1].isFull();
+      const p2Full = border.combinations[2].isFull();
+
+      let p1Type = null, p2Type = null, p1Sum = 0, p2Sum = 0;
+
+      if (p1Full) {
+        const c = new Combination();
+        p1Cards.forEach(card => c.addCard(card));
+        p1Type = COMBINATION_NAMES[c.getType()] || 'Total';
+        p1Sum = c.getSum();
+      }
+      if (p2Full) {
+        const c = new Combination();
+        p2Cards.forEach(card => c.addCard(card));
+        p2Type = COMBINATION_NAMES[c.getType()] || 'Total';
+        p2Sum = c.getSum();
+      }
+
+      let outcome;
+      if (border.claimed) {
+        outcome = border.winner; // 1 or 2
+      } else if (p1Full && p2Full) {
+        outcome = 'tie';
+      } else {
+        outcome = 'incomplete';
+      }
+
+      nodes.push({
+        id: border.id,
+        p1Cards,
+        p2Cards,
+        p1Type,
+        p2Type,
+        p1Sum,
+        p2Sum,
+        outcome,
+        winner: border.winner,
+      });
+    }
+
+    return {
+      winner: this.winner,
+      winReason,
+      scores: {
+        1: counts[1],
+        2: counts[2],
+      },
+      nodes,
+    };
+  }
 }
 
 module.exports = GameEngine;

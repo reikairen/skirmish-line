@@ -4,12 +4,14 @@ const NUM_BORDERS = 9;
 const HAND_SIZE = 6;
 const CARDS_PER_SIDE = 3;
 
+// Official rankings (strongest to weakest):
+// Color Run > Three of a Kind > Color > Run > Sum
 const COMBINATION_TYPES = {
   NONE: 0,
   SUM: 1,
-  THREE_OF_A_KIND: 2,
+  RUN: 2,
   COLOR: 3,
-  RUN: 4,
+  THREE_OF_A_KIND: 4,
   COLOR_RUN: 5,
 };
 

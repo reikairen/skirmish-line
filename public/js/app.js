@@ -110,11 +110,70 @@ socket.on('game-state', (state) => {
   renderSession();
 });
 
-socket.on('game-over', ({ winner, winnerName }) => {
+socket.on('game-over', ({ winner, winnerName, summary, playerId }) => {
   const successful = winner === myUserId;
   document.getElementById('result-title').textContent = successful ? 'Successful' : 'Unsuccessful';
   document.getElementById('result-message').textContent =
     successful ? 'You have secured the required nodes.' : `${winnerName} secured the required nodes.`;
+
+  // Render summary
+  if (summary) {
+    const pid = myUserId;
+    const peerId = pid === 1 ? 2 : 1;
+    const youName = userNames[pid] || 'You';
+    const peerName = userNames[peerId] || 'Peer';
+
+    document.getElementById('result-reason').textContent = summary.winReason;
+
+    let html = '';
+
+    // Score boxes
+    html += '<div class="summary-scores">';
+    html += `<div class="summary-score-box"><div class="score-num score-you">${summary.scores[pid]}</div><div class="score-label">${escapeHtml(youName)}</div></div>`;
+    html += `<div class="summary-score-box"><div class="score-num" style="color:#888;">vs</div><div class="score-label">&nbsp;</div></div>`;
+    html += `<div class="summary-score-box"><div class="score-num score-peer">${summary.scores[peerId]}</div><div class="score-label">${escapeHtml(peerName)}</div></div>`;
+    html += '</div>';
+
+    // Node-by-node table
+    html += '<table class="summary-table">';
+    html += `<tr><th>Node</th><th>${escapeHtml(youName)}</th><th>${escapeHtml(peerName)}</th><th>Result</th></tr>`;
+
+    for (const node of summary.nodes) {
+      const youType = pid === 1 ? node.p1Type : node.p2Type;
+      const youSum = pid === 1 ? node.p1Sum : node.p2Sum;
+      const peerType = pid === 1 ? node.p2Type : node.p1Type;
+      const peerSum = pid === 1 ? node.p2Sum : node.p1Sum;
+
+      let resultText, resultClass;
+      if (node.outcome === pid) {
+        resultText = 'You';
+        resultClass = 'node-you';
+      } else if (node.outcome === peerId) {
+        resultText = escapeHtml(peerName);
+        resultClass = 'node-peer';
+      } else if (node.outcome === 'tie') {
+        resultText = 'Tie';
+        resultClass = 'node-tie';
+      } else {
+        resultText = 'Open';
+        resultClass = 'node-open';
+      }
+
+      const youCell = youType ? `${youType} (${youSum})` : '---';
+      const peerCell = peerType ? `${peerType} (${peerSum})` : '---';
+
+      html += `<tr>`;
+      html += `<td>${node.id + 1}</td>`;
+      html += `<td class="${node.outcome === pid ? 'node-you' : ''}">${youCell}</td>`;
+      html += `<td class="${node.outcome === peerId ? 'node-peer' : ''}">${peerCell}</td>`;
+      html += `<td class="node-winner-cell ${resultClass}">${resultText}</td>`;
+      html += `</tr>`;
+    }
+    html += '</table>';
+
+    document.getElementById('result-breakdown').innerHTML = html;
+  }
+
   showOverlay('result-overlay');
 });
 

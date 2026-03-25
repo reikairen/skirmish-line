@@ -1,12 +1,14 @@
+// Matches COMBINATION_TYPES: CR(5) > 3oaK(4) > Color(3) > Run(2) > Sum(1)
 const FORMATION_NAMES = {
   0: '',
   1: 'Total',
-  2: 'Triplet',
+  2: 'Sequence',
   3: 'Category',
-  4: 'Sequence',
+  4: 'Triplet',
   5: 'Cat. Seq.',
 };
 
+// Must match server COMBINATION_TYPES: CR(5) > 3oaK(4) > Color(3) > Run(2) > Sum(1)
 function getFormationType(tiles) {
   if (tiles.length < 3) return 0;
 
@@ -15,11 +17,11 @@ function getFormationType(tiles) {
   const isSeq = sorted.every((c, i) => i === 0 || c.value === sorted[i - 1].value + 1);
   const isTrip = tiles.every(c => c.value === tiles[0].value);
 
-  if (isCat && isSeq) return 5;
-  if (isSeq) return 4;
-  if (isCat) return 3;
-  if (isTrip) return 2;
-  return 1;
+  if (isCat && isSeq) return 5; // Category Sequence
+  if (isTrip) return 4;         // Triplet
+  if (isCat) return 3;          // Category Set
+  if (isSeq) return 2;          // Sequence
+  return 1;                     // Total (sum)
 }
 
 function createTileElement(tile, options = {}) {
@@ -83,21 +85,33 @@ const Renderer = {
       });
       col.appendChild(peerTiles);
 
-      // Marker
+      // Marker + ownership label
+      const markerWrap = document.createElement('div');
+      markerWrap.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:2px;';
+
       const marker = document.createElement('div');
       marker.className = 'marker';
+
+      const ownerLabel = document.createElement('div');
+      ownerLabel.className = 'owner-label';
+
       if (node.claimed) {
         const securedByYou = node.winner === userId;
         marker.classList.add(securedByYou ? 'secured-1' : 'secured-2');
-        marker.textContent = securedByYou ? 'Y' : 'P';
+        marker.textContent = securedByYou ? '\u2713' : '\u2717'; // checkmark / X
+        ownerLabel.textContent = securedByYou ? 'YOU' : 'PEER';
+        ownerLabel.classList.add(securedByYou ? 'owner-you' : 'owner-peer');
       } else {
         marker.textContent = i + 1;
+        ownerLabel.textContent = '\u00A0'; // non-breaking space to preserve layout
         if (clickableNodes && clickableNodes.includes(i)) {
           marker.classList.add('clickable');
           marker.addEventListener('click', () => onNodeClick(i));
         }
       }
-      col.appendChild(marker);
+      markerWrap.appendChild(marker);
+      markerWrap.appendChild(ownerLabel);
+      col.appendChild(markerWrap);
 
       // Your tiles (bottom - grow away from marker)
       const yourTiles = document.createElement('div');
