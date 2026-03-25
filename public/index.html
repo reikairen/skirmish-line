@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skirmish Line - Resource Planner</title>
+  <meta name="description" content="Collaborative strategic resource allocation and planning tool">
+  <meta name="keywords" content="planning, strategy, resources, allocation, collaboration">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- MENU SCREEN -->
+  <div id="menu-screen" class="screen active">
+    <div class="menu-container">
+      <h1>Skirmish Line</h1>
+      <p class="subtitle">Strategic resource allocation</p>
+
+      <div class="menu-section">
+        <label for="user-name">Display Name</label>
+        <input type="text" id="user-name" placeholder="Enter your name" maxlength="20" value="Analyst">
+      </div>
+
+      <div class="menu-section">
+        <h2>Solo Session</h2>
+        <div class="config-row">
+          <select id="difficulty-level">
+            <option value="easy">Standard</option>
+            <option value="medium" selected>Advanced</option>
+            <option value="hard">Expert</option>
+          </select>
+          <button id="btn-solo" class="btn btn-accent">Start Solo</button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <h2>Collaborate</h2>
+        <button id="btn-create-public" class="btn btn-primary">Quick Match</button>
+        <button id="btn-create-private" class="btn btn-secondary">Private Session</button>
+
+        <div class="open-sessions" id="open-sessions-list"></div>
+
+        <div class="private-join">
+          <p>Have a session code?</p>
+          <div class="join-row">
+            <input type="text" id="session-code-input" placeholder="CODE" maxlength="4">
+            <button id="btn-join" class="btn btn-secondary">Connect</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-link">
+        <a id="btn-open-guide">How does this work?</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOBBY SCREEN -->
+  <div id="lobby-screen" class="screen">
+    <div class="menu-container">
+      <h1>Waiting for Peer</h1>
+      <div id="lobby-private-info">
+        <p>Share this session code:</p>
+        <div class="room-code" id="lobby-session-code">----</div>
+      </div>
+      <div id="lobby-public-info" style="display:none;">
+        <p>You are in the open queue.</p>
+      </div>
+      <p class="subtitle">Waiting for another participant to connect...</p>
+      <button id="btn-back-menu" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+
+  <!-- SESSION SCREEN -->
+  <div id="session-screen" class="screen">
+    <div class="session-header">
+      <div class="user-info" id="peer-info">
+        <span class="user-name" id="peer-name">Peer</span>
+        <span class="user-points" id="peer-points">0</span>
+      </div>
+      <div class="status-area">
+        <span id="cycle-indicator">Your Cycle</span>
+        <span id="pool-count">Pool: 54</span>
+      </div>
+      <div class="user-info" id="your-info">
+        <span class="user-name" id="your-name">You</span>
+        <span class="user-points" id="your-points">0</span>
+      </div>
+    </div>
+
+    <div class="tray peer-tray" id="peer-tray"></div>
+
+    <div class="workspace" id="workspace"></div>
+
+    <div class="tray your-tray" id="your-tray"></div>
+
+    <div class="action-bar">
+      <button id="btn-end-cycle" class="btn btn-primary" style="display:none;">End Cycle</button>
+    </div>
+  </div>
+
+  <!-- RESULT OVERLAY -->
+  <div id="result-overlay" class="overlay">
+    <div class="overlay-content">
+      <h1 id="result-title">Session Complete</h1>
+      <p id="result-message"></p>
+      <button id="btn-new-session" class="btn btn-primary">New Session</button>
+    </div>
+  </div>
+
+  <!-- DISCONNECT OVERLAY -->
+  <div id="disconnect-overlay" class="overlay">
+    <div class="overlay-content">
+      <h1>Peer Disconnected</h1>
+      <p>The other participant has left the session.</p>
+      <button id="btn-disconnect-menu" class="btn btn-primary">Back to Menu</button>
+    </div>
+  </div>
+
+  <!-- GUIDE OVERLAY -->
+  <div id="guide-overlay" class="overlay">
+    <div class="overlay-content">
+      <h1>How to Use Skirmish Line</h1>
+      <div class="guide-body">
+        <h2>Overview</h2>
+        <p>Two participants compete to secure markers along a line of 9 nodes. Each participant is dealt 6 tiles from a shared pool of 54 (values 1-9 across 6 categories). The objective is to secure <strong>5 of the 9 nodes</strong>, or <strong>3 adjacent nodes</strong> in a row.</p>
+
+        <h2>Each Cycle</h2>
+        <ul>
+          <li><strong>Select</strong> a tile from your tray by clicking it (it will lift up).</li>
+          <li><strong>Assign</strong> it to a node by clicking the numbered marker on the workspace. Each side of a node holds up to 3 tiles.</li>
+          <li>After assigning, click <strong>"End Cycle"</strong> to draw a new tile from the pool and pass to the other participant.</li>
+        </ul>
+
+        <h2>Securing Nodes</h2>
+        <p>When both sides of a node have 3 tiles, it is automatically evaluated and secured by the participant with the stronger formation. Formations are ranked as follows:</p>
+
+        <table class="rank-table">
+          <tr><th>Rank</th><th>Formation</th><th>Description</th></tr>
+          <tr><td>5</td><td>Category Sequence</td><td>Same category + consecutive values</td></tr>
+          <tr><td>4</td><td>Sequence</td><td>3 consecutive values, any category</td></tr>
+          <tr><td>3</td><td>Category Set</td><td>Same category, any values</td></tr>
+          <tr><td>2</td><td>Triplet</td><td>3 tiles with the same value</td></tr>
+          <tr><td>1</td><td>Total</td><td>Sum of tile values (tiebreaker)</td></tr>
+        </table>
+
+        <p>If two formations share the same rank, the one with the higher total value secures the node. Equal formations result in no assignment.</p>
+
+        <h2>Session End</h2>
+        <p>The session ends when one participant secures 5 nodes total, or 3 nodes in an unbroken row. If the pool empties and no further assignments can resolve a result, remaining complete nodes are resolved automatically.</p>
+
+        <h2>Solo Mode</h2>
+        <p>Compete against an automated opponent at three levels: Standard (exploratory), Advanced (pattern-aware), or Expert (strategic and adaptive).</p>
+
+        <h2>Collaborative Mode</h2>
+        <p><strong>Quick Match</strong> finds an open session or creates one visible to others. <strong>Private Session</strong> generates a 4-character code you can share directly. Use <strong>"Connect"</strong> with a code to join a private session.</p>
+      </div>
+      <button id="btn-close-guide" class="btn btn-secondary" style="margin-top: 16px;">Close</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
