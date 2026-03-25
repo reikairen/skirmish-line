@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const Card = require('./Card');
 const { COLORS, VALUES } = require('./constants');
 
@@ -18,9 +19,9 @@ class Deck {
   }
 
   shuffle() {
-    // Fisher-Yates shuffle
+    // Fisher-Yates shuffle with cryptographic randomness
     for (let i = this.cards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = crypto.randomInt(i + 1);
       [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
     }
   }

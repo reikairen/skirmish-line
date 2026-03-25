@@ -9,6 +9,13 @@ let userNames = {};
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+
+  // Manage polling lifecycle
+  if (id === 'menu-screen') {
+    startPolling();
+  } else {
+    stopPolling();
+  }
 }
 
 function showOverlay(id) {
@@ -216,13 +223,25 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Request open sessions on load and poll while on menu
-socket.emit('get-public-games');
-setInterval(() => {
-  if (document.getElementById('menu-screen').classList.contains('active')) {
+// Poll open sessions only while on menu screen
+let pollInterval = null;
+
+function startPolling() {
+  if (pollInterval) return;
+  socket.emit('get-public-games');
+  pollInterval = setInterval(() => {
     socket.emit('get-public-games');
+  }, 3000);
+}
+
+function stopPolling() {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
   }
-}, 3000);
+}
+
+startPolling();
 
 // --- Session rendering ---
 function renderSession() {
