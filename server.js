@@ -40,7 +40,7 @@ function startGame(roomId) {
   const playerNames = room.players.map(p => p.name);
   if (isAI) {
     const diffLabel = room.aiDifficulty.charAt(0).toUpperCase() + room.aiDifficulty.slice(1);
-    playerNames.push(`Computer (${diffLabel})`);
+    playerNames.push(`Automated Peer (${diffLabel})`);
   }
 
   for (const player of room.players) {
@@ -98,16 +98,22 @@ function emitGameOver(room) {
 
 function getWinnerName(room) {
   if (room.game.winner === 2 && room.game.aiMode) {
-    return 'Computer';
+    return 'Automated Peer';
   }
   const winnerPlayer = room.players.find(p => p.playerId === room.game.winner);
   return winnerPlayer ? winnerPlayer.name : 'Unknown';
+}
+
+function sanitizeName(name) {
+  if (typeof name !== 'string') return 'Anon';
+  return name.trim().slice(0, 20) || 'Anon';
 }
 
 io.on('connection', (socket) => {
   console.log('Connected:', socket.id);
 
   socket.on('create-room', ({ playerName, mode, aiDifficulty }) => {
+    playerName = sanitizeName(playerName);
     // Clean up any existing room for this socket
     const existingRoom = roomManager.getRoomBySocket(socket.id);
     if (existingRoom) {
@@ -127,9 +133,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join-room', ({ roomId, playerName }) => {
+    playerName = sanitizeName(playerName);
     const result = roomManager.joinRoom(roomId.toUpperCase(), socket.id, playerName);
     if (result.error) {
-      return socket.emit('error', { message: result.error });
+      return socket.emit('action-error', { message: result.error });
     }
     socket.join(roomId.toUpperCase());
     startGame(roomId.toUpperCase());
@@ -149,7 +156,7 @@ io.on('connection', (socket) => {
 
   socket.on('play-card', ({ cardIndex, borderIndex }) => {
     const room = roomManager.getRoomBySocket(socket.id);
-    if (!room || !room.game) return socket.emit('error', { message: 'Not in a game' });
+    if (!room || !room.game) return socket.emit('action-error', { message: 'Not in a game' });
 
     const playerId = roomManager.getPlayerIdBySocket(socket.id);
     try {
@@ -160,13 +167,13 @@ io.on('connection', (socket) => {
         emitGameOver(room);
       }
     } catch (err) {
-      socket.emit('error', { message: err.message });
+      socket.emit('action-error', { message: err.message });
     }
   });
 
   socket.on('claim-border', ({ borderIndex }) => {
     const room = roomManager.getRoomBySocket(socket.id);
-    if (!room || !room.game) return socket.emit('error', { message: 'Not in a game' });
+    if (!room || !room.game) return socket.emit('action-error', { message: 'Not in a game' });
 
     const playerId = roomManager.getPlayerIdBySocket(socket.id);
     try {
@@ -177,13 +184,13 @@ io.on('connection', (socket) => {
         emitGameOver(room);
       }
     } catch (err) {
-      socket.emit('error', { message: err.message });
+      socket.emit('action-error', { message: err.message });
     }
   });
 
   socket.on('end-turn', () => {
     const room = roomManager.getRoomBySocket(socket.id);
-    if (!room || !room.game) return socket.emit('error', { message: 'Not in a game' });
+    if (!room || !room.game) return socket.emit('action-error', { message: 'Not in a game' });
 
     const playerId = roomManager.getPlayerIdBySocket(socket.id);
     try {
@@ -199,7 +206,7 @@ io.on('connection', (socket) => {
         handleAITurn(room);
       }
     } catch (err) {
-      socket.emit('error', { message: err.message });
+      socket.emit('action-error', { message: err.message });
     }
   });
 

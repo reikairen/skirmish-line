@@ -111,6 +111,23 @@ class GameEngine {
         this.players[2].hand.length === 0) {
       this._resolveRemainingBorders();
     }
+
+    // Stalemate: if current player has tiles but no valid border to place on
+    if (!this.gameOver && this.players[this.currentPlayer].hand.length > 0) {
+      if (!this._hasValidMove(this.currentPlayer)) {
+        this._resolveRemainingBorders();
+      }
+    }
+  }
+
+  /**
+   * Check if a player has at least one valid border to place a tile on.
+   */
+  _hasValidMove(playerId) {
+    for (const border of this.board.borders) {
+      if (!border.claimed && !border.isFull(playerId)) return true;
+    }
+    return false;
   }
 
   /**

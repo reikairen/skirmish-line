@@ -28,9 +28,9 @@ class Combination {
     const isRn = this._isRun();
 
     if (isCol && isRn) return COMBINATION_TYPES.COLOR_RUN;
-    if (isRn) return COMBINATION_TYPES.RUN;
-    if (isCol) return COMBINATION_TYPES.COLOR;
     if (this._isThreeOfAKind()) return COMBINATION_TYPES.THREE_OF_A_KIND;
+    if (isCol) return COMBINATION_TYPES.COLOR;
+    if (isRn) return COMBINATION_TYPES.RUN;
     return COMBINATION_TYPES.SUM;
   }
 

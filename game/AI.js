@@ -87,6 +87,7 @@ const AI = {
           return { cardIndex: 0, borderIndex: bi };
         }
       }
+      return null; // no valid moves
     }
 
     return { cardIndex: bestCard, borderIndex: bestBorder };
@@ -206,6 +207,7 @@ const AI = {
           return { cardIndex: 0, borderIndex: bi };
         }
       }
+      return null; // no valid moves
     }
 
     return { cardIndex: bestCard, borderIndex: bestBorder };

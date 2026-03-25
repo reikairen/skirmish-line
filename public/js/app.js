@@ -181,7 +181,7 @@ socket.on('opponent-disconnected', () => {
   showOverlay('disconnect-overlay');
 });
 
-socket.on('error', ({ message }) => {
+socket.on('action-error', ({ message }) => {
   Renderer.showToast(message);
 });
 
