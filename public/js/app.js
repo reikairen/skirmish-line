@@ -25,8 +25,29 @@ function hideOverlay(id) {
   document.getElementById(id).classList.remove('active');
 }
 
+// Random display name generator
+const ADJECTIVES = [
+  'Swift', 'Bold', 'Sly', 'Keen', 'Brave', 'Calm', 'Deft', 'Grim',
+  'Hale', 'Iron', 'Jade', 'Lone', 'Nova', 'Pale', 'Sage', 'Thorn',
+  'Vast', 'Wild', 'Zen', 'Ash', 'Dusk', 'Flux', 'Gilt', 'Hex',
+];
+const NOUNS = [
+  'Fox', 'Hawk', 'Wolf', 'Bear', 'Lynx', 'Crow', 'Orca', 'Pike',
+  'Wren', 'Moth', 'Hare', 'Elk', 'Rook', 'Viper', 'Finch', 'Owl',
+  'Stag', 'Crane', 'Drake', 'Puma', 'Seal', 'Ram', 'Newt', 'Jay',
+];
+
+function randomName() {
+  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  return `${adj}${noun}`;
+}
+
+// Set random default name on load
+document.getElementById('user-name').value = randomName();
+
 function getUserName() {
-  return document.getElementById('user-name').value.trim() || 'Player';
+  return document.getElementById('user-name').value.trim() || randomName();
 }
 
 // --- Menu handlers ---
